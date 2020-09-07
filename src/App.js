@@ -24,32 +24,32 @@ class LoginForm extends React.Component {
       name: '',
       searchBy: '',
       errors: '',
-      ispost: '',
-      validate: false
+      ispost: ''
     };
     this.radioChange = this.radioChange.bind(this);
     this.nameChange = this.nameChange.bind(this);
     this.searchByChange = this.searchByChange.bind(this);
     this.validate = this.validate.bind(this);
     this.postApi = this.postApi.bind(this);
+    this.reset = this.reset.bind(this);
   }
 
   radioChange (e) {
-    e.preventDefault();
     this.setState({
       selectedOption: e.currentTarget.value
+    });
+    this.setState({
+      searchBy:''
     });
   }
 
   nameChange (e) {
-    e.preventDefault();
     this.setState({
       name: e.currentTarget.value
     });
   }
 
   searchByChange (e) {
-    e.preventDefault();
     this.setState({
       searchBy: e.currentTarget.value
     });
@@ -61,7 +61,6 @@ class LoginForm extends React.Component {
     const data = inputs.filter(item => item.type === selectedOption);
     let regex = '';
     if (data) { regex = data[0].regex; }
-    console.log(this.state, 1, regex);
     if (!searchBy || !regex.test(searchBy) || (data[0].length && (searchBy.length !== data[0].length))) {
       errors[selectedOption] = true;
     }
@@ -74,6 +73,16 @@ class LoginForm extends React.Component {
     return errors;
   }
 
+  reset () {
+    this.myFormRef.reset();
+    this.setState({
+      name: '',
+      searchBy: '',
+      errors: '',
+      ispost: ''
+    });
+  }
+
   postApi (event) {
     event.preventDefault();
     const errors = this.validate();
@@ -81,7 +90,6 @@ class LoginForm extends React.Component {
     this.setState({ errors: errors });
 
     if (Object.keys(errors).length < 1) {
-      console.log('22', this.state);
       this.setState({ ispost: false });
       const requestOptions = {
         method: 'POST',
@@ -90,18 +98,22 @@ class LoginForm extends React.Component {
       };
       fetch('https://jsonplaceholder.typicode.com/posts', requestOptions)
         .then(response => response.json())
-        .then(data => { alert('posted') });
+        .then(data => {
+          alert('posted');
+          this.reset();
+        });
+    }
   }
-}
 
   render () {
     const options = ['Email', 'Phone'];
     return (
-      <form id="loginform" onSubmit={this.postApi}>
+      <form id="loginform" ref={(el) => this.myFormRef = el} onSubmit={this.postApi}>
         <FormHeader title="Sample Form" />
         <div>
-          <FormInput className={this.state.errors.name ? 'error' : ''} description="Name" placeholder="Enter  Name" type="text" onChange={this.nameChange}/>
-
+          <FormInput className={this.state.errors.name ? 'error' : ''} description="Name" placeholder="Enter  Name" type="text" onChange={this.nameChange} value={this.state.name}/>
+          { this.state.errors.name && <div className='errorMsg'>Please enter valid Name</div>
+          }
           <div style={{
             color: 'rgba(187,187,187,0.9)',
             paddingTop: '2rem',
@@ -125,8 +137,9 @@ class LoginForm extends React.Component {
 
           </div>
 
-          <FormInput className={this.state.errors[this.state.selectedOption] ? 'error' : ''} description={this.state.selectedOption} placeholder={'Enter ' + this.state.selectedOption} type={this.state.selectedOption === 'Email' ? 'email' : 'text'} onChange={this.searchByChange}/>
-
+          <FormInput className={this.state.errors[this.state.selectedOption] ? 'error' : ''} description={this.state.selectedOption} placeholder={'Enter ' + this.state.selectedOption} type={this.state.selectedOption === 'Email' ? 'email' : 'text'} onChange={this.searchByChange} value={this.state.searchBy}/>
+          { this.state.errors[this.state.selectedOption] && <div className='errorMsg'>Please enter valid {this.state.selectedOption}</div>
+          }
           <FormButton title="Search" onClick={this.postApi}/>
         </div>
 
@@ -148,7 +161,7 @@ const FormButton = props => (
 const FormInput = props => (
   <div className="row">
     <label>{props.description}</label>
-    <input className={props.className} type={props.type} placeholder={props.placeholder} onChange={props.onChange}/>
+    <input className={props.className} value={props.value} type={props.type} placeholder={props.placeholder} onChange={props.onChange}/>
   </div>
 );
 
