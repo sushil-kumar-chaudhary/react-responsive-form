@@ -24,7 +24,8 @@ class LoginForm extends React.Component {
       name: '',
       searchBy: '',
       errors: '',
-      ispost: ''
+      ispost: '',
+      validate: false
     };
     this.radioChange = this.radioChange.bind(this);
     this.nameChange = this.nameChange.bind(this);
@@ -34,49 +35,53 @@ class LoginForm extends React.Component {
   }
 
   radioChange (e) {
+    e.preventDefault();
     this.setState({
       selectedOption: e.currentTarget.value
     });
   }
 
   nameChange (e) {
+    e.preventDefault();
     this.setState({
       name: e.currentTarget.value
     });
   }
 
   searchByChange (e) {
+    e.preventDefault();
     this.setState({
       searchBy: e.currentTarget.value
     });
   }
 
   validate () {
+    const errors = {};
     const { name, searchBy, selectedOption } = this.state;
     const data = inputs.filter(item => item.type === selectedOption);
     let regex = '';
     if (data) { regex = data[0].regex; }
     console.log(this.state, 1, regex);
     if (!searchBy || !regex.test(searchBy) || (data[0].length && (searchBy.length !== data[0].length))) {
-      this.setState({ ...this.state.errors, [selectedOption]: true });
+      errors[selectedOption] = true;
     }
     const data1 = inputs.filter(item => item.type === 'Name');
     if (data) { regex = data1[0].regex; }
     if (!name || (!regex.test(name)) || (data1[0].length && (name.length !== data1[0].length))) {
-      this.setState({ ...this.state.errors, name: true });
+      errors.name = true;
     }
-    let validate = true;
-    console.log(this.state.errors, 1);
-    Object.entries(this.state.errors).forEach(([key, value]) => {
-      if (value) { validate = false; }
-    });
-    return validate;
+
+    return errors;
   }
 
-  postApi () {
+  postApi (event) {
+    event.preventDefault();
+    const errors = this.validate();
     const { name, searchBy, selectedOption } = this.state;
-    if (this.validate()) {
-      console.log('es', this.state);
+    this.setState({ errors: errors });
+
+    if (Object.keys(errors).length < 1) {
+      console.log('22', this.state);
       this.setState({ ispost: false });
       const requestOptions = {
         method: 'POST',
@@ -85,17 +90,17 @@ class LoginForm extends React.Component {
       };
       fetch('https://jsonplaceholder.typicode.com/posts', requestOptions)
         .then(response => response.json())
-        .then(data => { console.log('hey11'); this.setState({ ispost: true }); });
-    }
+        .then(data => { alert('posted') });
   }
+}
 
   render () {
     const options = ['Email', 'Phone'];
     return (
-      <div id="loginform">
+      <form id="loginform" onSubmit={this.postApi}>
         <FormHeader title="Sample Form" />
         <div>
-          <FormInput description="Name" placeholder="Enter  Name" type="text" onChange={this.nameChange}/>
+          <FormInput className={this.state.errors.name ? 'error' : ''} description="Name" placeholder="Enter  Name" type="text" onChange={this.nameChange}/>
 
           <div style={{
             color: 'rgba(187,187,187,0.9)',
@@ -111,7 +116,9 @@ class LoginForm extends React.Component {
                   value={option}
                   checked={this.state.selectedOption === option}
                   onChange={this.radioChange}
-                  key={key} />
+                  key={key}
+                  name='option'
+                  required/>
                 {option}
               </div>;
             })}
@@ -123,7 +130,7 @@ class LoginForm extends React.Component {
           <FormButton title="Search" onClick={this.postApi}/>
         </div>
 
-      </div>
+      </form>
     );
   }
 }
@@ -134,7 +141,7 @@ const FormHeader = props => (
 
 const FormButton = props => (
   <div id="button" className="row">
-    <button onClick={props.onClick}>{props.title}</button>
+    <button type="submit">{props.title}</button>
   </div>
 );
 
